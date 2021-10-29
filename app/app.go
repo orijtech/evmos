@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -226,6 +227,8 @@ type Evmos struct {
 
 	// the configurator
 	configurator module.Configurator
+
+	tpsCounter *tpsCounter
 }
 
 // NewEvmos returns a reference to a new initialized Ethermint application.
@@ -531,6 +534,10 @@ func NewEvmos(
 	app.ScopedIBCKeeper = scopedIBCKeeper
 	app.ScopedTransferKeeper = scopedTransferKeeper
 
+	// Finally start the tpsCounter.
+	app.tpsCounter = newTPSCounter(logger)
+	go app.tpsCounter.start(context.Background())
+
 	return app
 }
 
@@ -544,7 +551,22 @@ func (app *Evmos) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci
 
 // EndBlocker updates every end block
 func (app *Evmos) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	defer app.tpsCounter.increment()
 	return app.mm.EndBlock(ctx, req)
+}
+
+// We are intentionally decomposing the DeliverTx method so as to calculate the transactions per second.
+func (app *Evmos) DeliverTx(req abci.RequestDeliverTx) (res abci.ResponseDeliverTx) {
+	defer func() {
+		if res.Code != 0 {
+			return
+		}
+
+		// Otherwise this was a valid transaction, hence let's count it.
+		app.tpsCounter.increment()
+	}()
+
+	return app.BaseApp.DeliverTx(req)
 }
 
 // InitChainer updates at chain initialization
