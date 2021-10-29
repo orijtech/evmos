@@ -61,6 +61,25 @@ Or check out the latest [release](https://github.com/tharsis/evmos/releases).
 
 To learn how the Evmos works from a high-level perspective, go to the [Introduction](https://evmos.dev/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://evmos.dev/quickstart/run_node.html).
 
+## Recording Transactions Per Second (TPS)
+In order to get a progressive value of the transactions per second, we use Prometheus to return the values.
+The Prometheus exporter runs at address "http://localhost:8877" so please add this section to your [Prometheus installation](https://opencensus.io/codelabs/prometheus/#1) config.yaml file like this
+```yaml
+global:
+  scrape_interval: 10s
+
+  external_labels:
+    monitor: 'evmos'
+
+scrape_configs:
+  - job_name: 'evmos'
+
+    scrape_interval: 10s
+
+    static_configs:
+      - targets: ['localhost:8877']
+```
+
 ## Community
 
 The following chat channels and forums are a great spot to ask questions about Evmos:

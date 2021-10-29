@@ -551,7 +551,6 @@ func (app *Evmos) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci
 
 // EndBlocker updates every end block
 func (app *Evmos) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	defer app.tpsCounter.increment()
 	return app.mm.EndBlock(ctx, req)
 }
 
